@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pandas as pd
 import psycopg2
-from psycopg2.extras import execute_values
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = PROJECT_ROOT / "data" / "raw" / "credit_risk_dataset.csv"
@@ -84,4 +83,4 @@ try:
     print(f"Imported {len(df):,} loan records.")
 
 finally:
-    conn.close()
+    conn.close()

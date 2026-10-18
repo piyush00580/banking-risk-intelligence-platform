@@ -34,4 +34,27 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 1 — Project Foundation
+Phase 4 — Database Design & SQL Analytics (Credit Risk Milestone Completed)
+
+## Implementation Progress
+
+- **Phase 1: Project Foundation** — Repository structure, dependencies, virtual environment, and git tracking initialized.
+- **Phase 2: Dataset Inspection & Validation** — Comprehensive data quality audit on 32,581 records (`notebooks/credit_risk_data_inspection.ipynb`), identifying missing values, duplicates, and domain constraints.
+- **Phase 3: Credit Risk Exploratory Data Analysis** — Statistical analysis and visualizations (`notebooks/credit_risk_eda.ipynb`) benchmarking default patterns across loan grades, loan intent, and borrower characteristics.
+- **Phase 4: Database Design & SQL Analytics (In Progress)**:
+  - Relational schema defined in `sql/schema.sql` (`customers`, `loans`, `transactions`, `fraud_alerts`).
+  - Credit data cleaning and ingestion via `src/load_credit_data.py`, populating 32,576 records each in `customers` and `loans`.
+  - Five core credit risk analytical queries implemented in `sql/credit_queries.sql` and verified against PostgreSQL (`banking_risk_intelligence`):
+    - Overall default rate: 21.82% (7,108 defaults / 32,576 loans).
+    - Default rate by loan grade (Grade A at 9.96% to Grade G at 98.44%).
+    - Default rate by loan purpose (Debt Consolidation highest at 28.59%).
+    - Loan amounts and interest rates by outcome.
+    - Customer-level loan risk summary join.
+
+## Database Execution
+
+To execute the credit risk analytical queries against PostgreSQL:
+
+```powershell
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d banking_risk_intelligence -f sql/credit_queries.sql
+```
