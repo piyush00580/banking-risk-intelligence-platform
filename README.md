@@ -34,14 +34,14 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 4 — Database Design & SQL Analytics (Credit Risk Milestone Completed)
+Phase 5 — Credit Risk Modeling (Modeling Benchmark Milestone Completed)
 
 ## Implementation Progress
 
 - **Phase 1: Project Foundation** — Repository structure, dependencies, virtual environment, and git tracking initialized.
 - **Phase 2: Dataset Inspection & Validation** — Comprehensive data quality audit on 32,581 records (`notebooks/credit_risk_data_inspection.ipynb`), identifying missing values, duplicates, and domain constraints.
 - **Phase 3: Credit Risk Exploratory Data Analysis** — Statistical analysis and visualizations (`notebooks/credit_risk_eda.ipynb`) benchmarking default patterns across loan grades, loan intent, and borrower characteristics.
-- **Phase 4: Database Design & SQL Analytics (In Progress)**:
+- **Phase 4: Database Design & SQL Analytics**:
   - Relational schema defined in `sql/schema.sql` (`customers`, `loans`, `transactions`, `fraud_alerts`).
   - Credit data cleaning and ingestion via `src/load_credit_data.py`, populating 32,576 records each in `customers` and `loans`.
   - Five core credit risk analytical queries implemented in `sql/credit_queries.sql` and verified against PostgreSQL (`banking_risk_intelligence`):
@@ -50,6 +50,13 @@ Phase 4 — Database Design & SQL Analytics (Credit Risk Milestone Completed)
     - Default rate by loan purpose (Debt Consolidation highest at 28.59%).
     - Loan amounts and interest rates by outcome.
     - Customer-level loan risk summary join.
+- **Phase 5: Credit Risk Modeling (Milestone Completed)**:
+  - Benchmark developed and executed in `notebooks/credit_risk_modeling.ipynb`.
+  - Data hygiene & integrity: Audited and removed 165 duplicates; excluded 5 impossible ages (>100); masked 2 employment length anomalies (>age) for imputation.
+  - Leakage-safe pipelines: `ColumnTransformer` with median imputation and standard scaling for numerical attributes; most-frequent imputation and one-hot encoding for categorical features (fitted strictly on training set).
+  - Stratified 80/20 train/test split ($n=25,928$ train, $n=6,483$ test) preserving 21.87% portfolio default prevalence.
+  - Multi-architecture benchmark: Logistic Regression (Standard & Balanced), Random Forest, and XGBoost.
+  - Champion model: **XGBoost Classifier** delivering **ROC-AUC: 0.9409**, **PR-AUC: 0.8955**, **F1-Score: 0.8278**, **Precision: 96.97%**, and **Recall: 72.21%** on held-out test data.
 
 ## Database Execution
 
@@ -57,4 +64,5 @@ To execute the credit risk analytical queries against PostgreSQL:
 
 ```powershell
 & "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d banking_risk_intelligence -f sql/credit_queries.sql
-```
+```
+
