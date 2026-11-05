@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 5 — Credit Risk Modeling (Modeling Benchmark Milestone Completed)
+Phase 5 — Credit Risk Modeling (Milestone 5.2: Optimization, Explainability & Serialization Completed)
 
 ## Implementation Progress
 
@@ -50,13 +50,19 @@ Phase 5 — Credit Risk Modeling (Modeling Benchmark Milestone Completed)
     - Default rate by loan purpose (Debt Consolidation highest at 28.59%).
     - Loan amounts and interest rates by outcome.
     - Customer-level loan risk summary join.
-- **Phase 5: Credit Risk Modeling (Milestone Completed)**:
-  - Benchmark developed and executed in `notebooks/credit_risk_modeling.ipynb`.
-  - Data hygiene & integrity: Audited and removed 165 duplicates; excluded 5 impossible ages (>100); masked 2 employment length anomalies (>age) for imputation.
-  - Leakage-safe pipelines: `ColumnTransformer` with median imputation and standard scaling for numerical attributes; most-frequent imputation and one-hot encoding for categorical features (fitted strictly on training set).
-  - Stratified 80/20 train/test split ($n=25,928$ train, $n=6,483$ test) preserving 21.87% portfolio default prevalence.
-  - Multi-architecture benchmark: Logistic Regression (Standard & Balanced), Random Forest, and XGBoost.
-  - Champion model: **XGBoost Classifier** delivering **ROC-AUC: 0.9409**, **PR-AUC: 0.8955**, **F1-Score: 0.8278**, **Precision: 96.97%**, and **Recall: 72.21%** on held-out test data.
+- **Phase 5: Credit Risk Modeling**:
+  - **Milestone 5.1 (Multi-Architecture Benchmark)**:
+    - Data hygiene & integrity: Audited and removed 165 duplicates; excluded 5 impossible ages (>100); masked 2 employment length anomalies (>age) for imputation.
+    - Leakage-safe pipelines: `ColumnTransformer` with median imputation and standard scaling for numerical attributes; most-frequent imputation and one-hot encoding for categorical features (fitted strictly on training set).
+    - Stratified 80/20 train/test split ($n=25,928$ train, $n=6,483$ test) preserving 21.87% portfolio default prevalence.
+    - Multi-architecture benchmark: Logistic Regression (Standard & Balanced), Random Forest, and XGBoost.
+    - Champion model: **XGBoost Classifier** delivering **ROC-AUC: 0.9409**, **PR-AUC: 0.8955**, **F1-Score: 0.8278**, **Precision: 96.97%**, and **Recall: 72.21%** on held-out test data.
+  - **Milestone 5.2 (Optimization, Explainability & Serialization)**:
+    - **Threshold Tuning**: Executed a 17-point threshold sweep ($T \in [0.10, 0.90]$) using strictly 5-fold Stratified Cross-Validation out-of-fold probabilities on the training partition without test set contamination.
+    - **Business Operating Threshold**: Selected **$T = 0.45$** based on validation F1-score maximization (F1 = 0.8277), reducing missed test defaults (False Negatives) from 394 to 387 while preserving 95.55% precision.
+    - **SHAP Explainability**: Implemented `shap.TreeExplainer` providing global feature impact beeswarm distributions and individual applicant adverse action waterfall explanations (ECOA/FCRA compliance).
+    - **Temporal Leakage Audit**: Evaluated `loan_grade` and `loan_int_rate` origination timing, distinguishing pre-underwriting screening from post-pricing underwriting verification gates.
+    - **Production Serialization**: Packaged end-to-end champion pipeline to `models/credit_risk_xgb.joblib` and runtime configuration to `models/credit_risk_metadata.json`, with verified inference reproduction.
 
 ## Database Execution
 
