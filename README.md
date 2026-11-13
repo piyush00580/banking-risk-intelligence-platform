@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 5 — Credit Risk Modeling (Milestone 5.2: Optimization, Explainability & Serialization Completed)
+Phase 6 — Fraud Detection (Milestone 6.2: Fraud Detection Exploratory Data Analysis Completed)
 
 ## Implementation Progress
 
@@ -63,6 +63,16 @@ Phase 5 — Credit Risk Modeling (Milestone 5.2: Optimization, Explainability & 
     - **SHAP Explainability**: Implemented `shap.TreeExplainer` providing global feature impact beeswarm distributions and individual applicant adverse action waterfall explanations (ECOA/FCRA compliance).
     - **Temporal Leakage Audit**: Evaluated `loan_grade` and `loan_int_rate` origination timing, distinguishing pre-underwriting screening from post-pricing underwriting verification gates.
     - **Production Serialization**: Packaged end-to-end champion pipeline to `models/credit_risk_xgb.joblib` and runtime configuration to `models/credit_risk_metadata.json`, with verified inference reproduction.
+- **Phase 6: Fraud Detection**:
+  - **Milestone 6.1 (Dataset Acquisition & Integrity Check)**: Acquired the ULB/Worldline benchmark European cardholder fraud dataset (`data/raw/creditcard.csv`) with 284,807 transactions across 31 features, documenting ODbL v1.0 provenance and verification script `src/download_fraud_data.py`.
+  - **Milestone 6.2 (Exploratory Data Analysis)**:
+    - Completed exhaustive statistical analysis in `notebooks/fraud_detection_eda.ipynb` (33 cells, fully executed).
+    - Data hygiene: Audited and removed 1,081 exact duplicates (1,062 legitimate, 19 fraudulent); verified 0 missing cells.
+    - Cleaned distribution: 283,253 legitimate vs. 473 fraudulent transactions (0.1667% prevalence, ~599:1 imbalance).
+    - Amount dynamics: Legitimate median €22.00 vs. fraud median €9.82; fraud mean (€123.87) exceeds legitimate mean (€88.41) due to right-skewed heavy fraud tail up to €2,125.87.
+    - Zero-amount card testing: €0.00 authorizations account for 5.29% of fraud vs. 0.63% of legitimate transactions (8.4x relative elevation).
+    - Temporal risk partitioning: Discovered elevated nocturnal fraud spikes in Window 0 (0.4473%) and Window 4 (0.5196%) across 8 sequential ~6-hour intervals.
+    - Hypothesis testing: Mann-Whitney U tests with Benjamini-Hochberg FDR correction ($\alpha=0.05$) identified $V_{14}, V_4, V_{12}, V_{11}, V_{10}, V_3, V_2, V_{16}, V_9, V_7$ as most discriminative signals ($p < 10^{-135}$).
 
 ## Database Execution
 
