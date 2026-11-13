@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 6 — Fraud Detection (Milestone 6.2: Fraud Detection Exploratory Data Analysis Completed)
+Phase 6 — Fraud Detection (Milestone 6.3: Fraud Detection Feature Engineering Completed)
 
 ## Implementation Progress
 
@@ -73,6 +73,12 @@ Phase 6 — Fraud Detection (Milestone 6.2: Fraud Detection Exploratory Data Ana
     - Zero-amount card testing: €0.00 authorizations account for 5.29% of fraud vs. 0.63% of legitimate transactions (8.4x relative elevation).
     - Temporal risk partitioning: Discovered elevated nocturnal fraud spikes in Window 0 (0.4473%) and Window 4 (0.5196%) across 8 sequential ~6-hour intervals.
     - Hypothesis testing: Mann-Whitney U tests with Benjamini-Hochberg FDR correction ($\alpha=0.05$) identified $V_{14}, V_4, V_{12}, V_{11}, V_{10}, V_3, V_2, V_{16}, V_9, V_7$ as most discriminative signals ($p < 10^{-135}$).
+  - **Milestone 6.3 (Feature Engineering & Partitioning Pipeline)**:
+    - Implemented modular, scikit-learn compatible transformer `FraudFeatureEngineer` in `src/fraud_feature_engineering.py` and analytical verification notebook `notebooks/fraud_feature_engineering.ipynb` (22 cells, fully executed).
+    - Engineered 5 non-redundant domain features: `Amount_log` ($\log(1+\text{Amount})$ for skew dampening), `is_zero_amount` (binary indicator for micro-authorizations), `Time_scaled` (leakage-safe robust scaling of elapsed seconds without unanchored diurnal assumptions), and cross-feature interactions `V14_V4_interaction` ($r = -0.4285$ with Class) and `V12_V11_interaction` ($r = -0.2798$ with Class).
+    - Rigorously compared Stratified Random (64/16/20) and Chronological (64/16/20) data splitting strategies.
+    - Recommended 3-way Stratified Partitioning for Phase 6.4 modeling (Train: 181,584 txs / 303 frauds; Val: 45,396 txs / 76 frauds; Test: 56,746 txs / 94 frauds) to ensure minority class statistical power during threshold tuning over an unanchored 48-hour recording window.
+    - Validated zero data leakage: strict disjoint indices, scaler parameters fit solely on training data, target isolation, and zero null or infinite values.
 
 ## Database Execution
 
