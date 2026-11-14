@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 6 — Fraud Detection (Milestone 6.4: Baseline Fraud Detection Modelling Completed)
+Phase 6 — Fraud Detection (Milestone 6.5: Advanced Fraud Detection Model Benchmarking Completed)
 
 ## Implementation Progress
 
@@ -86,6 +86,43 @@ Phase 6 — Fraud Detection (Milestone 6.4: Baseline Fraud Detection Modelling C
       - **Balanced Logistic Regression**: PR-AUC 0.7686, ROC-AUC 0.9788, Tuned $T=0.90 \to$ F1: 0.3885 (Precision: 24.58%, Recall: 92.63%, 7 FN, 271 FP).
       - **Random Forest Baseline (Champion)**: **PR-AUC 0.8529**, ROC-AUC 0.9790, Tuned $T=0.60 \to$ **F1: 0.8046** (Precision: 88.61%, Recall: 73.68%, 25 FN, **9 FP**).
     - Validated that decision threshold optimization strictly on the validation partition substantially improves operational trade-offs without test-set contamination.
+  - **Milestone 6.5 (Advanced Fraud Detection Model Benchmarking)**:
+      
+
+    **Status: Completed**
+
+    Implemented and benchmarked advanced gradient-boosting architectures using XGBoost and LightGBM, alongside the existing Logistic Regression and Random Forest baselines.
+
+    **Models evaluated:**
+    - Standard Logistic Regression
+    - Balanced Logistic Regression
+    - Random Forest
+    - XGBoost
+    - LightGBM
+
+    **Final held-out test results:**
+
+    | Metric | Random Forest | XGBoost |
+    |---|---:|---:|
+    | PR-AUC | 0.7943 | **0.8297** |
+    | ROC-AUC | 0.9492 | **0.9725** |
+    | Precision | 94.37% | **97.26%** |
+    | Recall | 70.53% | **74.74%** |
+    | F1-score | 0.8072 | **0.8452** |
+    | Decision threshold | 0.60 | 0.35 |
+
+    **Key findings:**
+    - XGBoost achieved the strongest reported test performance among the highlighted tree-based models.
+    - Validation-based threshold tuning was performed without using the test set for threshold selection.
+    - XGBoost achieved 71 true positives, 24 missed fraud cases and 2 false positives on the held-out test set.
+    - Feature importance analysis highlighted V14, V10 and V12_V11_interaction among the leading XGBoost features.
+    - XGBoost is selected as the provisional champion for the next integration phase.
+
+    **Technical deliverables:**
+    - `src/fraud_advanced_models.py`
+    - `notebooks/fraud_advanced_modeling.ipynb`
+    - Updated `requirements.txt`
+    - Updated project documentation
 
 ## Database Execution
 
@@ -94,4 +131,4 @@ To execute the credit risk analytical queries against PostgreSQL:
 ```powershell
 & "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d banking_risk_intelligence -f sql/credit_queries.sql
 ```
-
+
