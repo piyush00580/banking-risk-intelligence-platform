@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 6 — Fraud Detection (Milestone 6.3: Fraud Detection Feature Engineering Completed)
+Phase 6 — Fraud Detection (Milestone 6.4: Baseline Fraud Detection Modelling Completed)
 
 ## Implementation Progress
 
@@ -79,6 +79,13 @@ Phase 6 — Fraud Detection (Milestone 6.3: Fraud Detection Feature Engineering 
     - Rigorously compared Stratified Random (64/16/20) and Chronological (64/16/20) data splitting strategies.
     - Recommended 3-way Stratified Partitioning for Phase 6.4 modeling (Train: 181,584 txs / 303 frauds; Val: 45,396 txs / 76 frauds; Test: 56,746 txs / 94 frauds) to ensure minority class statistical power during threshold tuning over an unanchored 48-hour recording window.
     - Validated zero data leakage: strict disjoint indices, scaler parameters fit solely on training data, target isolation, and zero null or infinite values.
+  - **Milestone 6.4 (Baseline Fraud Detection Modelling)**:
+    - Developed reusable baseline modeling module `src/fraud_baseline_models.py` and comprehensive benchmark notebook `notebooks/fraud_baseline_modeling.ipynb` (20 cells, fully executed).
+    - Benchmarked three distinct baseline architectures across identical leakage-safe stratified partitions (181,584 train, 45,396 validation, 56,746 test):
+      - **Standard Logistic Regression**: PR-AUC 0.8037, ROC-AUC 0.9818, Tuned $T=0.20 \to$ F1: 0.7598 (Precision: 80.95%, Recall: 71.58%, 27 FN, 16 FP).
+      - **Balanced Logistic Regression**: PR-AUC 0.7686, ROC-AUC 0.9788, Tuned $T=0.90 \to$ F1: 0.3885 (Precision: 24.58%, Recall: 92.63%, 7 FN, 271 FP).
+      - **Random Forest Baseline (Champion)**: **PR-AUC 0.8529**, ROC-AUC 0.9790, Tuned $T=0.60 \to$ **F1: 0.8046** (Precision: 88.61%, Recall: 73.68%, 25 FN, **9 FP**).
+    - Validated that decision threshold optimization strictly on the validation partition substantially improves operational trade-offs without test-set contamination.
 
 ## Database Execution
 
