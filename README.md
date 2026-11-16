@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 6 — Fraud Detection (Milestone 6.5: Advanced Fraud Detection Model Benchmarking Completed)
+Phase 6 - Fraud Detection (Milestone 6.7: Model Packaging and Reproducible Inference Completed)
 
 ## Implementation Progress
 
@@ -130,6 +130,24 @@ Phase 6 — Fraud Detection (Milestone 6.5: Advanced Fraud Detection Model Bench
     - Used a fixed-seed sample of up to 1,000 held-out test transactions for global beeswarm and mean-absolute-SHAP bar plots. Top SHAP features were V4, V14, V10, V12, and `V12_V11_interaction`. Compared SHAP ranking with the XGBoost `feature_importances_` ranking: V14 and V10 ranked first and second by estimator importance, while V4 ranked fifth; both methods placed V12 fourth and `V12_V11_interaction` among the leading features.
     - Generated local waterfall explanations from actual held-out test cases: TP index 41,828 (fraud score 0.995800), FP index 119,616 (0.972888), FN index 68,371 (0.000015), and TN index 109,664 (0.000003), at threshold 0.35. Positive SHAP values push a case toward fraud; negative values push toward legitimate. Anonymized PCA features V1-V28 are not assigned unsupported business meanings; engineered feature interpretations are limited to their formulas.
     - Limitations: SHAP global findings describe the sampled test transactions and this fitted model, not causal effects or calibrated loss estimates. Correlated features and engineered interactions can share attribution; a single local example per confusion category is illustrative. SHAP values are model-margin (log-odds) contributions, not probability-point changes.
+
+  - **Milestone 6.7 (Fraud Model Packaging, Reproducible Inference & Readiness)**:
+    - Packaged the Phase 6.5 XGBoost champion and fitted `FraudFeatureEngineer(time_scaler="robust")` together in `models/fraud_detection_xgb.joblib` (ignored by Git under the existing `models/*.joblib` rule). Reproducible training entry point: `python src/package_fraud_model.py`. Metadata is saved separately to `models/fraud_detection_metadata.json`.
+    - Training repeats exact-deduplication and the same stratified 64/16/20 split with `random_state=42`. The engineer and model fit only on the training partition; validation reproduces the established threshold 0.35 (F1 0.9000). Test data is not used to fit or tune. Phase 6.5 saved notebook outputs were checked and match its documented XGBoost test metrics (PR-AUC 0.8297, ROC-AUC 0.9725, F1 0.8452; TP=71, FP=2, FN=24, TN=56,649).
+    - Reusable API in `src/fraud_inference.py`: `load_fraud_model()` and `predict_fraud(raw_transactions)`. Input is a pandas DataFrame with the 30 numeric raw fields (`Time`, `Amount`, `V1` through `V28`), without `Class`; missing/extra columns, duplicate names, null/infinite/non-numeric values, negative amount/time are rejected. The result contains `fraud_probability`, `predicted_class` (threshold 0.35), and `risk_category`.
+
+      ```python
+      import pandas as pd
+      from src.fraud_inference import predict_fraud
+
+      raw_batch = pd.read_csv("transactions_to_score.csv")  # 30 raw feature columns; no Class
+      predictions = predict_fraud(raw_batch)
+      print(predictions.head())
+      ```
+
+    - Risk bands are score groupings: low `<0.10`, moderate `[0.10, 0.35)`, high `[0.35, 0.75)`, very high `>=0.75`. These are not calibrated financial-loss probabilities. Run `python -m unittest discover -s tests -p "test_fraud_inference.py" -v` after packaging to verify artifact loading, single/batch predictions, schema/value validation, threshold consistency and reload consistency.
+    - Reproducibility check on 32 validation rows found maximum absolute prediction difference 0 after joblib save/reload (tolerance `1e-12`); all 30 raw and 35 engineered feature names/order are saved and verified. Test partition is 56,746 transactions, including 95 frauds; it is held out.
+    - Readiness limitations: scores have not been calibrated as financial-loss probabilities; the anonymized PCA features lack direct business interpretation; the dataset is highly imbalanced and no temporal drift, production latency, or live integration assessment is included. This milestone packages inference only; later platform/API phases remain separate.
 
 ## Database Execution
 
