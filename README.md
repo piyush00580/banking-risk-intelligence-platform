@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 7 - Integrated Risk Intelligence Engine Completed
+Phase 8 - Flask REST API Completed
 
 ## Implementation Progress
 
@@ -173,6 +173,104 @@ Phase 7 - Integrated Risk Intelligence Engine Completed
 
   - Credit risk interpretation preserves the credit notebook's tiers: `Tier 1 (Prime)` below 0.15, `Tier 2 (Moderate)` from 0.15 to below 0.45, and `Tier 3 (High Default Risk)` at or above 0.45. Fraud categories and threshold remain as defined in Phase 6.7. Both saved model artifacts and metadata files must exist locally; joblib artifacts remain ignored by Git.
   - Tests use mocks for the new engine unit cases and include artifact-path/error validation. Run all project tests with `python -m unittest discover -s tests -v`; the credit scoring pipeline is never retrained during inference. No combined score is calculated because the benchmark datasets do not share a verified customer identity, and the two model scores are not calibrated to a common outcome.
+
+- **Phase 8: Flask REST API**:
+  - Added a modular Flask app factory, routes, request validators and JSON serializers under `src/api/`. The API calls the Phase 7 engine; it contains no model training or duplicated feature engineering. Flask was already pinned in `requirements.txt`, so no dependency change was needed.
+  - `GET /api/health` reports service availability separately from model readiness. It checks for the local credit artifact and metadata plus the fraud artifact without loading models. Per-model `loaded` fields reflect process-local model caches.
+  - `POST /api/credit-risk/score` accepts one JSON object with the exact 11 Phase 7 applicant fields. The selected threshold remains 0.45 and the existing credit tiers are preserved. `POST /api/fraud-risk/score` accepts one JSON object with `Time`, `V1` through `V28`, and `Amount`; it rejects `Class`, keeps threshold 0.35 and delegates preprocessing to the fraud engine.
+  - Successful requests use `{ "success": true, "data": { ... } }` with the Phase 7 response fields: `risk_type`, `model_name`, `model_version`, `risk_score`, `predicted_class`, `risk_category`, `decision_threshold`, `score_interpretation`, and `metadata`. Scores remain separate estimates of loan default and transaction fraud; no combined score is produced.
+  - Error responses use `{ "success": false, "error": { "code": "...", "message": "..." } }`: 400 invalid JSON, 422 validation failure, 404 unknown route, 405 method not allowed, 503 model unavailable, and 500 unexpected internal error. Responses do not expose local paths or stack traces.
+  - Model instances are loaded lazily and cached in-process after the first score request; health checks do not trigger loading. Restart the service after replacing artifacts, or call `clear_model_caches()` from the engine when controlled reload is needed. Required local artifacts are `models/credit_risk_xgb.joblib`, `models/credit_risk_metadata.json`, and `models/fraud_detection_xgb.joblib`; the joblib files are ignored by Git.
+
+  **Start locally from the repository root:**
+
+  ```powershell
+  python -m src.api.app
+  ```
+
+  The development server listens on `http://127.0.0.1:5000` with debug mode disabled.
+
+  **Example credit-risk JSON body:**
+
+  ```json
+  {
+    "person_age": 38,
+    "person_income": 110000.0,
+    "person_home_ownership": "OWN",
+    "person_emp_length": 12.0,
+    "loan_intent": "HOMEIMPROVEMENT",
+    "loan_grade": "A",
+    "loan_amnt": 5000.0,
+    "loan_int_rate": 7.25,
+    "loan_percent_income": 0.05,
+    "cb_person_default_on_file": "N",
+    "cb_person_cred_hist_length": 10
+  }
+  ```
+
+  **Example fraud-risk JSON body:**
+
+  ```json
+  {
+    "Time": 1000.0,
+    "V1": 0.0, "V2": 0.0, "V3": 0.0, "V4": 0.0,
+    "V5": 0.0, "V6": 0.0, "V7": 0.0, "V8": 0.0,
+    "V9": 0.0, "V10": 0.0, "V11": 0.0, "V12": 0.0,
+    "V13": 0.0, "V14": 0.0, "V15": 0.0, "V16": 0.0,
+    "V17": 0.0, "V18": 0.0, "V19": 0.0, "V20": 0.0,
+    "V21": 0.0, "V22": 0.0, "V23": 0.0, "V24": 0.0,
+    "V25": 0.0, "V26": 0.0, "V27": 0.0, "V28": 0.0,
+    "Amount": 12.5
+  }
+  ```
+
+  **Credit-risk request (PowerShell):**
+
+  ```powershell
+  $creditApplicant = @{
+      person_age = 38; person_income = 110000.0; person_home_ownership = "OWN"
+      person_emp_length = 12.0; loan_intent = "HOMEIMPROVEMENT"; loan_grade = "A"
+      loan_amnt = 5000.0; loan_int_rate = 7.25; loan_percent_income = 0.05
+      cb_person_default_on_file = "N"; cb_person_cred_hist_length = 10
+  } | ConvertTo-Json
+  Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/credit-risk/score" `
+      -Method Post -ContentType "application/json" -Body $creditApplicant
+  ```
+
+  **Fraud-risk request (PowerShell):**
+
+  ```powershell
+  $transaction = @{ Time = 1000.0; Amount = 12.5 }
+  1..28 | ForEach-Object { $transaction["V$_"] = 0.0 }
+  $fraudTransaction = $transaction | ConvertTo-Json
+  Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/fraud-risk/score" `
+      -Method Post -ContentType "application/json" -Body $fraudTransaction
+  ```
+
+  Example success envelope:
+
+  ```json
+  {
+    "success": true,
+    "data": {
+      "risk_type": "credit_default",
+      "model_name": "Credit Risk XGBoost Classifier",
+      "model_version": "1.0.0",
+      "risk_score": 0.000924,
+      "predicted_class": 0,
+      "risk_category": "Tier 1 (Prime)",
+      "decision_threshold": 0.45,
+      "score_interpretation": "Estimated probability of loan default from the credit-risk model.",
+      "metadata": {
+        "decision_threshold_selection": "Empirical F1-score maximization via 5-fold Stratified Cross-Validation on training partition without test contamination",
+        "default_threshold": 0.5,
+        "artifact": "models/credit_risk_xgb.joblib"
+      }
+    }
+  }
+  ```
+
+  Run API tests with `python -m unittest discover -s tests -p "test_api.py" -v`. Run all API, Phase 6 and Phase 7 regression tests with `python -m unittest discover -s tests -v`. Ordinary API tests mock engine scoring; live checks require the local model artifacts.
 
 ## Database Execution
 

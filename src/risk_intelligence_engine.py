@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sys
+from functools import lru_cache
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -43,6 +44,27 @@ class RiskInputError(ValueError):
     """Raised when inputs do not match the selected model's raw feature contract."""
 
 
+@lru_cache(maxsize=4)
+def _load_fraud_bundle_cached(artifact_path: str):
+    """Keep each trusted fraud artifact loaded once per process and resolved path."""
+    return load_fraud_model(artifact_path)
+
+
+def clear_model_caches() -> None:
+    """Clear process-local loaded model caches, for controlled artifact refreshes/tests."""
+    load_credit_model.cache_clear()
+    _load_fraud_bundle_cached.cache_clear()
+
+
+def model_cache_status() -> dict[str, bool]:
+    """Return whether each model family has a cached instance in this process."""
+    return {
+        "credit_risk": load_credit_model.cache_info().currsize > 0,
+        "transaction_fraud": _load_fraud_bundle_cached.cache_info().currsize > 0,
+    }
+
+
+@lru_cache(maxsize=4)
 def load_credit_model(
     artifact_path: str | Path | None = None,
     metadata_path: str | Path | None = None,
@@ -184,7 +206,8 @@ def score_transaction_fraud(
     ``risk_score`` is the model estimate of transaction fraud, not loan default.
     Fraud preprocessing, threshold and risk bands remain owned by fraud_inference.
     """
-    bundle = load_fraud_model(artifact_path)
+    fraud_artifact = Path(artifact_path).resolve() if artifact_path is not None else (PROJECT_ROOT / "models" / "fraud_detection_xgb.joblib")
+    bundle = _load_fraud_bundle_cached(str(fraud_artifact))
     predictions = predict_fraud(transaction_data, artifact=bundle)
     scores = predictions["fraud_probability"].to_numpy(dtype=np.float64)
     classes = predictions["predicted_class"].to_numpy(dtype=int)

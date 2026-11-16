@@ -65,6 +65,7 @@ def credit_metadata():
 
 class RiskIntelligenceEngineTests(unittest.TestCase):
     def setUp(self):
+        engine.clear_model_caches()
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -124,6 +125,25 @@ class RiskIntelligenceEngineTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             engine.load_credit_model(self.artifact, self.root / "missing.json")
 
+    def test_repeated_credit_scores_reuse_loaded_pipeline(self):
+        first = self.score_credit(CREDIT_SAMPLE)
+        second = self.score_credit(CREDIT_SAMPLE)
+        self.assertEqual(first.risk_score.iloc[0], second.risk_score.iloc[0])
+        self.assertEqual(engine.joblib.load.call_count, 1)
+
+    def test_repeated_fraud_scores_reuse_loaded_bundle(self):
+        fraud_fields = ["Time", *[f"V{i}" for i in range(1, 29)], "Amount"]
+        transaction = pd.DataFrame([{field: 0.0 for field in fraud_fields}])
+        transaction.loc[0, "Time"] = 100.0
+        bundle = {"threshold": 0.35, "metadata": {"model_name": "Fraud", "model_version": "1"}}
+        prediction = pd.DataFrame({"fraud_probability": [0.2], "predicted_class": [0], "risk_category": ["moderate"]})
+        with patch.object(engine, "load_fraud_model", return_value=bundle) as loader, \
+             patch.object(engine, "predict_fraud", return_value=prediction):
+            first = engine.score_transaction_fraud(transaction)
+            second = engine.score_transaction_fraud(transaction)
+        self.assertEqual(first.risk_score.iloc[0], second.risk_score.iloc[0])
+        loader.assert_called_once()
+
     def test_fraud_path_preserves_threshold_bands_and_schema_without_credit_load(self):
         # Use the existing 30-column fraud schema while keeping model work mocked.
         raw_names = ["Time", *[f"V{i}" for i in range(1, 29)], "Amount"]
@@ -141,7 +161,7 @@ class RiskIntelligenceEngineTests(unittest.TestCase):
              patch.object(engine, "predict_fraud", return_value=predicted) as predictor, \
              patch.object(engine, "load_credit_model", side_effect=AssertionError("credit model loaded")):
             result = engine.score_transaction_fraud(transactions)
-        loader.assert_called_once_with(None)
+        loader.assert_called_once_with(str((ROOT / "models" / "fraud_detection_xgb.joblib").resolve()))
         predictor.assert_called_once_with(transactions, artifact=bundle)
         self.assertEqual(list(result.columns), engine.RESPONSE_COLUMNS)
         self.assertEqual(result.index.tolist(), [12])
