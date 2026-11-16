@@ -124,6 +124,13 @@ Phase 6 — Fraud Detection (Milestone 6.5: Advanced Fraud Detection Model Bench
     - Updated `requirements.txt`
     - Updated project documentation
 
+  - **Milestone 6.6 (Fraud Model Explainability and Risk Interpretation)**:
+    - Added and executed `notebooks/fraud_model_explainability.ipynb` using `shap.TreeExplainer` for the Phase 6.5 XGBoost provisional champion. Data preparation reproduced the same raw dataset, 1,081 exact duplicate removals, stratified 64/16/20 split (181,584 train / 45,396 validation / 56,746 test), and training-only robust time scaling and feature engineering. The train partition contains 302 frauds, validation 76, and test 95.
+    - Refit the unchanged champion configuration (`n_estimators=150`, `max_depth=7`, `learning_rate=0.05`, `subsample=0.8`, `colsample_bytree=0.8`, `scale_pos_weight=1.0`, `random_state=42`). Validation-selected threshold was 0.35 (validation F1 0.9000); held-out test confusion counts reproduced TP=71, FP=2, FN=24, TN=56,649.
+    - Used a fixed-seed sample of up to 1,000 held-out test transactions for global beeswarm and mean-absolute-SHAP bar plots. Top SHAP features were V4, V14, V10, V12, and `V12_V11_interaction`. Compared SHAP ranking with the XGBoost `feature_importances_` ranking: V14 and V10 ranked first and second by estimator importance, while V4 ranked fifth; both methods placed V12 fourth and `V12_V11_interaction` among the leading features.
+    - Generated local waterfall explanations from actual held-out test cases: TP index 41,828 (fraud score 0.995800), FP index 119,616 (0.972888), FN index 68,371 (0.000015), and TN index 109,664 (0.000003), at threshold 0.35. Positive SHAP values push a case toward fraud; negative values push toward legitimate. Anonymized PCA features V1-V28 are not assigned unsupported business meanings; engineered feature interpretations are limited to their formulas.
+    - Limitations: SHAP global findings describe the sampled test transactions and this fitted model, not causal effects or calibrated loss estimates. Correlated features and engineered interactions can share attribution; a single local example per confusion category is illustrative. SHAP values are model-margin (log-odds) contributions, not probability-point changes.
+
 ## Database Execution
 
 To execute the credit risk analytical queries against PostgreSQL:
