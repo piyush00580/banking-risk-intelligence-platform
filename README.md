@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 8 - Flask REST API Completed
+Phase 9.1 - Power BI data preparation implemented; local PostgreSQL view validation pending
 
 ## Implementation Progress
 
@@ -271,6 +271,14 @@ Phase 8 - Flask REST API Completed
   ```
 
   Run API tests with `python -m unittest discover -s tests -p "test_api.py" -v`. Run all API, Phase 6 and Phase 7 regression tests with `python -m unittest discover -s tests -v`. Ordinary API tests mock engine scoring; live checks require the local model artifacts.
+
+- **Phase 9: Power BI Dashboard**:
+  - **Phase 9.1 - Data Preparation and Integration**: Added non-destructive Power BI SQL views in `sql/powerbi_views.sql`, reproducible credit and held-out fraud export scripts in `src/export_powerbi_credit_data.py` and `src/export_powerbi_fraud_data.py`, focused tests, and `docs/powerbi/POWER_BI_DATA_GUIDE.md`.
+  - Generated local files under the Git-ignored `data/processed/powerbi/`: `fraud_test_scored.csv` (56,746 held-out test rows), `fraud_kpi_summary.csv`, `fraud_dataset_metadata.json`, `credit_scored.csv` (32,411 cleaned records), and `credit_dataset_metadata.json`. Re-running both export scripts produced byte-identical files.
+  - Fraud export reproduces the established duplicate cleanup and stratified 64/16/20 split (`random_state=42`) and uses the saved model at threshold 0.35. Held-out test KPIs: 95 frauds, 56,651 legitimate, TP=71, FP=2, TN=56,649, FN=24, precision=0.9726, recall=0.7474, F1=0.8452, AP/PR-AUC=0.8297, ROC-AUC=0.9725.
+  - Credit export reproduces credit notebook cleaning and stratified 80/20 split (`random_state=42`), using the saved pipeline and threshold 0.45. It labels 25,928 training rows as in-sample and 6,483 original held-out rows separately; it does not tune or retrain the model.
+  - PostgreSQL views use only the existing `customers` and `loans` tables. SQL static safety/definition checks passed, but this environment could not authenticate to the local database (no password configured), so the views have not been applied or queried yet. Phase 9.1 data preparation is implemented; live database validation remains pending. No Power BI dashboard or `.pbix` file is claimed as complete.
+  - The credit benchmark and fraud benchmark remain independent; do not join them or combine their scores. See `docs/powerbi/POWER_BI_DATA_GUIDE.md` for connection steps, exports, report suggestions, and caveats. The next dashboard milestone is Phase 9.2 - Credit Risk Dashboard, after local SQL view validation.
 
 ## Database Execution
 
