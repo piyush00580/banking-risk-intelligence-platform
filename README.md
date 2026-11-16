@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 6 - Fraud Detection (Milestone 6.7: Model Packaging and Reproducible Inference Completed)
+Phase 7 - Integrated Risk Intelligence Engine Completed
 
 ## Implementation Progress
 
@@ -148,6 +148,31 @@ Phase 6 - Fraud Detection (Milestone 6.7: Model Packaging and Reproducible Infer
     - Risk bands are score groupings: low `<0.10`, moderate `[0.10, 0.35)`, high `[0.35, 0.75)`, very high `>=0.75`. These are not calibrated financial-loss probabilities. Run `python -m unittest discover -s tests -p "test_fraud_inference.py" -v` after packaging to verify artifact loading, single/batch predictions, schema/value validation, threshold consistency and reload consistency.
     - Reproducibility check on 32 validation rows found maximum absolute prediction difference 0 after joblib save/reload (tolerance `1e-12`); all 30 raw and 35 engineered feature names/order are saved and verified. Test partition is 56,746 transactions, including 95 frauds; it is held out.
     - Readiness limitations: scores have not been calibrated as financial-loss probabilities; the anonymized PCA features lack direct business interpretation; the dataset is highly imbalanced and no temporal drift, production latency, or live integration assessment is included. This milestone packages inference only; later platform/API phases remain separate.
+
+- **Phase 7: Integrated Risk Intelligence Engine**:
+  - Added `src/risk_intelligence_engine.py` with two independent, lazy-loaded scoring pathways: `score_credit_risk(applicant_data)` and `score_transaction_fraud(transaction_data)`. The engine wraps the saved credit pipeline and delegates transaction preprocessing and scoring to `src/fraud_inference.py`.
+  - Credit inputs use the model's 11 raw fields: numeric `person_age`, `person_income`, `person_emp_length`, `loan_amnt`, `loan_int_rate`, `loan_percent_income`, `cb_person_cred_hist_length`; and categorical `person_home_ownership`, `loan_intent`, `loan_grade`, `cb_person_default_on_file`. The serialized preprocessing pipeline handles missing values with its fitted imputers. Fraud inputs retain the 30 numeric fields (`Time`, `V1`-`V28`, `Amount`), excluding `Class`.
+  - Both pathways return the same columns: `risk_type`, `model_name`, `model_version`, `risk_score`, `predicted_class`, `risk_category`, `decision_threshold`, `score_interpretation`, and `metadata`. Credit score means estimated loan-default probability; fraud score means estimated transaction-fraud probability. The pathways do not create or imply an overall combined probability or tier.
+  - Example usage from the repository root:
+
+    ```python
+    import pandas as pd
+    from src.risk_intelligence_engine import score_credit_risk, score_transaction_fraud
+
+    applicant = pd.DataFrame([{
+        "person_age": 38, "person_income": 110000.0, "person_home_ownership": "OWN",
+        "person_emp_length": 12.0, "loan_intent": "HOMEIMPROVEMENT", "loan_grade": "A",
+        "loan_amnt": 5000.0, "loan_int_rate": 7.25, "loan_percent_income": 0.05,
+        "cb_person_default_on_file": "N", "cb_person_cred_hist_length": 10,
+    }])
+    credit_result = score_credit_risk(applicant)  # credit risk score, threshold 0.45
+
+    raw_transactions = pd.read_csv("transactions_to_score.csv")  # 30 raw features; no Class
+    fraud_result = score_transaction_fraud(raw_transactions)  # fraud score, threshold 0.35
+    ```
+
+  - Credit risk interpretation preserves the credit notebook's tiers: `Tier 1 (Prime)` below 0.15, `Tier 2 (Moderate)` from 0.15 to below 0.45, and `Tier 3 (High Default Risk)` at or above 0.45. Fraud categories and threshold remain as defined in Phase 6.7. Both saved model artifacts and metadata files must exist locally; joblib artifacts remain ignored by Git.
+  - Tests use mocks for the new engine unit cases and include artifact-path/error validation. Run all project tests with `python -m unittest discover -s tests -v`; the credit scoring pipeline is never retrained during inference. No combined score is calculated because the benchmark datasets do not share a verified customer identity, and the two model scores are not calibrated to a common outcome.
 
 ## Database Execution
 
