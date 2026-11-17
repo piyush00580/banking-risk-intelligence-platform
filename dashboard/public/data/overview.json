@@ -1,0 +1,71 @@
+{
+  "source": "Phase 9.1 local benchmark exports",
+  "credit": {
+    "scope": "held_out_test",
+    "applications": 6483,
+    "observed_defaults": 1418,
+    "observed_default_rate": 0.2187258985037791,
+    "mean_predicted_default_probability": 0.21944623374466987,
+    "by_grade": [
+      {
+        "grade": "A",
+        "applications": 2143,
+        "observed_defaults": 209,
+        "mean_predicted_default_probability": 0.09218139364784798
+      },
+      {
+        "grade": "B",
+        "applications": 2026,
+        "observed_defaults": 341,
+        "mean_predicted_default_probability": 0.16951103275576815
+      },
+      {
+        "grade": "C",
+        "applications": 1319,
+        "observed_defaults": 255,
+        "mean_predicted_default_probability": 0.20398551967707373
+      },
+      {
+        "grade": "D",
+        "applications": 731,
+        "observed_defaults": 433,
+        "mean_predicted_default_probability": 0.6060523995230087
+      },
+      {
+        "grade": "E",
+        "applications": 198,
+        "observed_defaults": 130,
+        "mean_predicted_default_probability": 0.6150903653065151
+      },
+      {
+        "grade": "F",
+        "applications": 50,
+        "observed_defaults": 34,
+        "mean_predicted_default_probability": 0.6560794097199999
+      },
+      {
+        "grade": "G",
+        "applications": 16,
+        "observed_defaults": 16,
+        "mean_predicted_default_probability": 0.9389241933812501
+      }
+    ],
+    "in_sample_rows_excluded": 25928
+  },
+  "fraud": {
+    "scope": "held_out_test",
+    "transactions": 56746,
+    "fraud": 95,
+    "legitimate": 56651,
+    "true_positives": 71,
+    "false_positives": 2,
+    "true_negatives": 56649,
+    "false_negatives": 24,
+    "precision": 0.9726027397,
+    "recall": 0.7473684211,
+    "f1": 0.8452380952,
+    "pr_auc": 0.8297313133,
+    "roc_auc": 0.9724761676,
+    "threshold": 0.35
+  }
+}

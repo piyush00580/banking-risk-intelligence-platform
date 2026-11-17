@@ -34,7 +34,7 @@ An integrated financial risk analytics platform combining credit risk prediction
 
 ## Status
 
-Phase 9.1 - Power BI data preparation implemented; local PostgreSQL view validation pending
+Phase 9.2 - React frontend foundation implemented; detailed analytics and live database integration pending
 
 ## Implementation Progress
 
@@ -278,7 +278,9 @@ Phase 9.1 - Power BI data preparation implemented; local PostgreSQL view validat
   - Fraud export reproduces the established duplicate cleanup and stratified 64/16/20 split (`random_state=42`) and uses the saved model at threshold 0.35. Held-out test KPIs: 95 frauds, 56,651 legitimate, TP=71, FP=2, TN=56,649, FN=24, precision=0.9726, recall=0.7474, F1=0.8452, AP/PR-AUC=0.8297, ROC-AUC=0.9725.
   - Credit export reproduces credit notebook cleaning and stratified 80/20 split (`random_state=42`), using the saved pipeline and threshold 0.45. It labels 25,928 training rows as in-sample and 6,483 original held-out rows separately; it does not tune or retrain the model.
   - PostgreSQL views use only the existing `customers` and `loans` tables. SQL static safety/definition checks passed, but this environment could not authenticate to the local database (no password configured), so the views have not been applied or queried yet. Phase 9.1 data preparation is implemented; live database validation remains pending. No Power BI dashboard or `.pbix` file is claimed as complete.
-  - The credit benchmark and fraud benchmark remain independent; do not join them or combine their scores. See `docs/powerbi/POWER_BI_DATA_GUIDE.md` for connection steps, exports, report suggestions, and caveats. The next dashboard milestone is Phase 9.2 - Credit Risk Dashboard, after local SQL view validation.
+  - The credit benchmark and fraud benchmark remain independent; do not join them or combine their scores. See `docs/powerbi/POWER_BI_DATA_GUIDE.md` for connection steps, exports, report suggestions, and caveats.
+  - **Phase 9.2 - React Frontend Foundation and Design System**: Added a standalone React 18, TypeScript, and Vite application under `dashboard/`. The responsive shell provides Overview, Credit Intelligence, Fraud Intelligence, Model Intelligence, and Portfolio Analytics navigation; the latter four detailed workspaces are explicitly marked in development. The Overview reads live service health from the Phase 8 `GET /api/health` endpoint and separately reads an aggregate JSON snapshot generated from Phase 9.1 exports by `dashboard/scripts/build_overview_snapshot.py`. It displays only the original held-out credit partition (6,483 applications; 1,418 observed defaults; 21.87% observed default rate; 21.94% mean estimated default probability) and the independent fraud held-out metrics at threshold 0.35 (56,746 transactions; 95 frauds; TP=71, FP=2, TN=56,649, FN=24; precision=97.26%, recall=74.74%, F1=84.52%, PR-AUC=82.97%, ROC-AUC=97.25%). This is benchmark data, not live portfolio activity; no underlying customer rows are displayed. The dashboard does not call scoring endpoints or combine the credit and fraud benchmarks.
+  - Start the Flask API from the repository root with `python -m src.api.app`, then run the frontend with `cd dashboard; npm install; npm run dev`. The Vite development proxy forwards `/api` requests to `http://127.0.0.1:5000`; set `VITE_API_BASE_URL` when using a separately hosted API. Refresh the aggregate snapshot after regenerating Phase 9.1 exports with `python scripts/build_overview_snapshot.py` from `dashboard/`. Frontend verification: `npm run build` passes; `npm test` passes all three overview, API-offline fallback, and navigation checks. Detailed analytical dashboard workspaces and live database integration remain future work.
 
 ## Database Execution
 
